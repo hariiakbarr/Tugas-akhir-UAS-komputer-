@@ -5,7 +5,7 @@ const PROD_DATA = [
     { id: 3, name: "Kintamani Bali Fruity", category: "biji-kopi", price: 85000, img: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&q=80&w=400", desc: "Cita rasa unik Arabika Bali dengan rasa segar jeruk alami (fruity notes)." },
     { id: 4, name: "Java Preanger Exotic", category: "biji-kopi", price: 90000, img: "java.jpg", desc: "Kopi klasik tanah Jawa dengan aroma bunga yang memikat dan rasa manis seimbang." },
     { id: 5, name: "V60 Dripper Kaca 02", category: "alat-seduh", price: 145000, img: "dripperkaca.jpg", desc: "Alat seduh V60 bahan kaca tebal tahan panas untuk ekstraksi kopi yang jernih." },
-    { id: 6, name: "Gooseneck Kettle 600ml", category: "alat-seduh", price: 210000, img: "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?auto=format&fit=crop&q=80&w=400", desc: "Teko leher angsa dengan termometer analog untuk kontrol aliran air yang presisi." },
+    { id: 6, name: "Gooseneck Kettle 600ml", category: "alat-seduh", price: 210000, img: "goosenectkettle.jpg", desc: "Teko leher angsa dengan termometer analog untuk kontrol aliran air yang presisi." },
     { id: 7, name: "Hand Grinder Stainless", category: "alat-seduh", price: 185000, img: "hand.jpg", desc: "Penggiling kopi manual dengan burr keramik, bisa diatur tingkat kehalusannya." },
     { id: 8, name: "Kertas Filter V60 (100 pcs)", category: "alat-seduh", price: 45000, img: "kertas.jpg", desc: "Paper filter berkualitas tinggi tanpa pemutih, menjaga rasa asli seduhan kopi Anda." }
 ];
