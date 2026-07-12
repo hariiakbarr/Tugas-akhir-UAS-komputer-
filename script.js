@@ -890,6 +890,283 @@ function getMonthlySales(orders, monthsBack) {
         if (bucket) bucket.total += o.total;
     });
     return buckets;
+    // 1. DATA PRODUK
+// Data produk diambil dari store-data.js (dipakai bareng sama admin.html) lewat
+// localStorage, jadi kalau admin nambah/edit/hapus produk atau stok, otomatis
+// kelihatan juga di katalog toko ini tanpa perlu ubah kode dua kali.
+let PROD_DATA = loadProducts();
+
+let cart = JSON.parse(localStorage.getItem('KOPI_CART')) || [];
+
+// 2. ELEMENT SELECTORS
+const productsGrid = document.getElementById('products-grid');
+const searchInput = document.getElementById('search-input');
+const categoryFilter = document.getElementById('category-filter');
+const cartIconBtn = document.getElementById('cart-icon-btn');
+const cartSidebar = document.getElementById('cart-sidebar');
+const closeCartBtn = document.getElementById('close-cart-btn');
+const cartItemsContainer = document.getElementById('cart-items-container');
+const cartCount = document.getElementById('cart-count');
+const cartTotalPrice = document.getElementById('cart-total-price');
+const checkoutSection = document.getElementById('checkout-section');
+const goToCheckoutBtn = document.getElementById('go-to-checkout');
+const checkoutItemsList = document.getElementById('checkout-items-list');
+const checkoutTotalAmount = document.getElementById('checkout-total-amount');
+const checkoutForm = document.getElementById('checkout-form');
+
+// Modal Elements
+const productModal = document.getElementById('product-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+const modalImg = document.getElementById('modal-img');
+const modalTitle = document.getElementById('modal-title');
+const modalCategory = document.getElementById('modal-category');
+const modalPrice = document.getElementById('modal-price');
+const modalDesc = document.getElementById('modal-desc');
+const modalAddToCartBtn = document.getElementById('modal-add-to-cart');
+let activeModalProductId = null;
+
+
+// 3. FUNGSI RENDER (MENAMPILKAN DATA)
+
+
+// formatRupiah() dipakai dari store-data.js supaya format angka konsisten
+// dengan yang ditampilkan di Admin Dashboard.
+
+// Render Produk ke Grid Utama
+function renderProducts(productsToRender) {
+    productsGrid.innerHTML = '';
+    if(productsToRender.length === 0) {
+        productsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:var(--gray);">Produk tidak ditemukan...</p>`;
+        return;
+    }
+
+    productsToRender.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <img src="${product.img}" alt="${product.name}" onclick="openModal(${product.id})" onerror="this.onerror=null;this.src='${FALLBACK_IMG}'">
+            <div class="product-info">
+                <h3 onclick="openModal(${product.id})">${product.name}</h3>
+                <span class="price">${formatRupiah(product.price)}</span>
+                <button class="btn-primary" onclick="addToCart(${product.id})">
+                    <i class="fas fa-plus"></i> Tambah Keranjang
+                </button>
+            </div>
+        `;
+        productsGrid.appendChild(card);
+    });
+}
+
+// Filter & Cari Fungsi Combined
+function filterAndSearchProducts() {
+    const searchKeyword = searchInput.value.toLowerCase();
+    const selectedCategory = categoryFilter.value;
+
+    const filtered = PROD_DATA.filter(product => {
+        const matchSearch = product.name.toLowerCase().includes(searchKeyword);
+        const matchCategory = selectedCategory === 'all' || product.category === selectedCategory;
+        return matchSearch && matchCategory;
+    });
+
+    renderProducts(filtered);
+}
+
+// 4. LOGIKA KERANJANG BELANJA 
+function updateCartUI() {
+    // Simpan ke localStorage
+    localStorage.setItem('KOPI_CART', JSON.stringify(cart));
+    
+    // Hitung badge jumlah barang
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    cartCount.innerText = totalItems;
+
+    // Render isi sidebar keranjang
+    cartItemsContainer.innerHTML = '';
+    let totalPrice = 0;
+
+    cart.forEach(item => {
+        totalPrice += item.price * item.quantity;
+        const itemEl = document.createElement('div');
+        itemEl.className = 'cart-item';
+        itemEl.innerHTML = `
+            <div>
+                <h4>${item.name}</h4>
+                <small>${formatRupiah(item.price)} x ${item.quantity}</small>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button onclick="changeQuantity(${item.id}, -1)" class="btn-primary" style="padding:2px 8px;">-</button>
+                <span>${item.quantity}</span>
+                <button onclick="changeQuantity(${item.id}, 1)" class="btn-primary" style="padding:2px 8px;">+</button>
+                <i class="fas fa-trash-alt" onclick="removeFromCart(${item.id})" style="color:#dc3545; cursor:pointer; margin-left:10px;"></i>
+            </div>
+        `;
+        cartItemsContainer.appendChild(itemEl);
+    });
+
+    cartTotalPrice.innerText = formatRupiah(totalPrice);
+    checkoutTotalAmount.innerText = formatRupiah(totalPrice);
+    
+    // Update daftar pesanan di halaman checkout jika sedang terbuka
+    renderCheckoutSummary();
+}
+
+function addToCart(id) {
+    const product = PROD_DATA.find(p => p.id === id);
+    const existingItem = cart.find(item => item.id === id);
+
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({ ...product, quantity: 1 });
+    }
+    
+    updateCartUI();
+    // Beri efek animasi membuka keranjang agar user tahu produk masuk
+    cartSidebar.classList.add('open');
+}
+
+function changeQuantity(id, delta) {
+    const item = cart.find(item => item.id === id);
+    if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            removeFromCart(id);
+            return;
+        }
+    }
+    updateCartUI();
+}
+
+function removeFromCart(id) {
+    cart = cart.filter(item => item.id !== id);
+    updateCartUI();
+}
+
+// 5. MODAL DETAIL PRODUK
+function openModal(id) {
+    const product = PROD_DATA.find(p => p.id === id);
+    activeModalProductId = id;
+    
+    modalImg.onerror = function () { this.onerror = null; this.src = FALLBACK_IMG; };
+    modalImg.src = product.img;
+    modalTitle.innerText = product.name;
+    modalCategory.innerText = product.category === 'biji-kopi' ? 'Kategori: Biji Kopi (Beans)' : 'Kategori: Alat Seduh';
+    modalPrice.innerText = formatRupiah(product.price);
+    modalDesc.innerText = product.desc;
+    
+    productModal.style.display = 'flex';
+}
+
+function closeModal() {
+    productModal.style.display = 'none';
+}
+
+// 6. SIMULASI CHECKOUT & VALIDASI FORMULIR
+function renderCheckoutSummary() {
+    checkoutItemsList.innerHTML = '';
+    cart.forEach(item => {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.marginBottom = '10px';
+        div.innerHTML = `<span>${item.name} (x${item.quantity})</span> <span>${formatRupiah(item.price * item.quantity)}</span>`;
+        checkoutItemsList.appendChild(div);
+    });
+}
+
+goToCheckoutBtn.addEventListener('click', (e) => {
+    if(cart.length === 0) {
+        e.preventDefault();
+        alert('Keranjang belanja Anda masih kosong!');
+        return;
+    }
+    checkoutSection.classList.remove('hidden');
+    cartSidebar.classList.remove('open');
+    renderCheckoutSummary();
+});
+
+checkoutForm.addEventListener('submit', (e) => {
+    e.preventDefault(); // Mencegah reload halaman bawaan form
+    
+    // Mengambil data form untuk validasi
+    const nama = document.getElementById('nama').value;
+    const alamat = document.getElementById('alamat').value;
+    const payment = document.getElementById('payment-method').value;
+
+    if(!nama || !alamat || !payment) {
+        alert('Mohon lengkapi semua data pengiriman dan pembayaran wajib!');
+        return;
+    }
+
+    // Simpan pesanan ini ke data bersama (localStorage) supaya langsung muncul
+    // di Admin Dashboard: Manajemen Pesanan, grafik tren penjualan, dan daftar pelanggan.
+    const totalBelanja = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const orders = loadOrders(); // load dulu (biar data seed & counter kebentuk kalau ini transaksi pertama)
+    const orderId = nextOrderId();
+    orders.push({
+        id: orderId,
+        customerName: nama,
+        customerAddress: alamat,
+        paymentMethod: payment,
+        date: new Date().toISOString(),
+        status: 'Pending',
+        items: cart.map(item => ({ productId: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+        total: totalBelanja
+    });
+    saveOrders(orders);
+
+    // Kurangi stok produk yang baru dibeli, tersinkron ke Admin Dashboard
+    cart.forEach(item => {
+        const produk = PROD_DATA.find(p => p.id === item.id);
+        if (produk) produk.stock = Math.max(0, (produk.stock || 0) - item.quantity);
+    });
+    saveProducts(PROD_DATA);
+
+    // Simulasi Berhasil (Meniru Callback Payment Gateway Midtrans/Xendit)
+    alert(`🎉 Pembayaran BERHASIL via ${payment.toUpperCase()}!\n\nNomor Pesanan: ${orderId}\nTerima kasih ${nama}, pesanan Anda sedang kami proses dan segera dikirim ke alamat: ${alamat}.`);
+    
+    // Reset Keranjang & Form
+    cart = [];
+    updateCartUI();
+    checkoutForm.reset();
+    checkoutSection.classList.add('hidden');
+});
+
+// 7. EVENT LISTENERS UTAMA
+searchInput.addEventListener('input', filterAndSearchProducts);
+categoryFilter.addEventListener('change', filterAndSearchProducts);
+
+cartIconBtn.addEventListener('click', () => cartSidebar.classList.add('open'));
+closeCartBtn.addEventListener('click', () => cartSidebar.classList.remove('open'));
+closeModalBtn.addEventListener('click', closeModal);
+
+modalAddToCartBtn.addEventListener('click', () => {
+    if(activeModalProductId) {
+        addToCart(activeModalProductId);
+        closeModal();
+    }
+});
+
+// Tutup modal jika user klik di luar kotak modal
+window.addEventListener('click', (e) => {
+    if (e.target === productModal) closeModal();
+});
+
+// Tampilkan info kontak toko di footer, diambil dari Pengaturan Toko di admin
+function renderStoreContactInfo() {
+    const settings = loadSettings();
+    const el = document.getElementById('store-contact-info');
+    if (el) {
+        el.textContent = `${settings.address} • ${settings.email} • ${settings.phone}`;
+    }
+}
+
+// Jalankan fungsi tampilkan produk pertama kali halaman dimuat
+document.addEventListener('DOMContentLoaded', () => {
+    renderProducts(PROD_DATA);
+    updateCartUI();
+    renderStoreContactInfo();
+});
                                           }
                                           
        
