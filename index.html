@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KopiKita Roastery | Premium Specialty Coffee</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-XXXXX-Y', 'auto');
+        ga('send', 'pageview');
+    </script>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo">Kopi<span>Kita</span></div>
+        <nav class="nav-links">
+            <a href="#hero">Beranda</a>
+            <a href="#katalog">Katalog</a>
+            <a href="#checkout-section">Checkout</a>
+        </nav>
+        <div class="nav-icons">
+            <div class="cart-icon" id="cart-icon-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-badge" id="cart-count">0</span>
+            </div>
+        </div>
+    </header>
+
+    <section id="hero" class="hero">
+        <div class="hero-content">
+            <h1>Nikmati Cita Rasa Kopi Asli Nusantara</h1>
+            <p>Biji kopi pilihan kualitas terbaik yang disangrai dengan sepenuh hati.</p>
+            <a href="#katalog" class="btn-hero">Jelajahi Produk</a>
+        </div>
+    </section>
+
+    <main class="container">
+        
+        <section id="katalog" class="katalog-section">
+            <h2>Katalog Produk Kami</h2>
+            
+            <div class="filter-container">
+                <input type="text" id="search-input" placeholder="Cari kopi atau alat seduh...">
+                <select id="category-filter">
+                    <option value="all">Semua Kategori</option>
+                    <option value="biji-kopi">Biji Kopi (Beans)</option>
+                    <option value="alat-seduh">Alat Seduh (Tools)</option>
+                </select>
+            </div>
+
+            <div class="products-grid" id="products-grid">
+                </div>
+        </section>
+
+        <div id="product-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" id="close-modal-btn">&times;</span>
+                <div class="modal-body">
+                    <img id="modal-img" src="" alt="">
+                    <div class="modal-info">
+                        <h3 id="modal-title">Nama Produk</h3>
+                        <p class="modal-category" id="modal-category">Kategori</p>
+                        <p class="modal-price" id="modal-price">Rp 0</p>
+                        <p id="modal-desc">Deskripsi produk lengkap di sini.</p>
+                        <button id="modal-add-to-cart" class="btn-primary">Tambahkan ke Keranjang</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="cart-sidebar" class="cart-sidebar">
+            <div class="cart-header">
+                <h3>Keranjang Belanja</h3>
+                <span class="close-cart" id="close-cart-btn">&times;</span>
+            </div>
+            <div class="cart-items" id="cart-items-container">
+                </div>
+            <div class="cart-footer">
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span id="cart-total-price">Rp 0</span>
+                </div>
+                <a href="#checkout-section" class="btn-checkout-nav" id="go-to-checkout">Lanjut ke Pembayaran</a>
+            </div>
+        </div>
+
+        <section id="checkout-section" class="checkout-section hidden">
+            <h2>Halaman Pembayaran (Checkout)</h2>
+            <div class="checkout-container">
+                <div class="checkout-summary">
+                    <h3>Ringkasan Pesanan</h3>
+                    <div id="checkout-items-list"></div>
+                    <div class="summary-total">
+                        <strong>Total Yang Harus Dibayar:</strong>
+                        <span id="checkout-total-amount">Rp 0</span>
+                    </div>
+                </div>
+                
+                <form id="checkout-form" class="checkout-form">
+                    <h3>Informasi Pengiriman & Pembayaran</h3>
+                    <div class="form-group">
+                        <label for="nama">Nama Lengkap *</label>
+                        <input type="text" id="nama" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="alamat">Alamat Lengkap *</label>
+                        <textarea id="alamat" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment-method">Metode Pembayaran (Simulasi Midtrans/Xendit) *</label>
+                        <select id="payment-method" required>
+                            <option value="">-- Pilih Pembayaran --</option>
+                            <option value="bca">BCA Virtual Account (Simulasi)</option>
+                            <option value="gopay">GoPay / QRIS (Simulasi)</option>
+                            <option value="ovo">OVO (Simulasi)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-submit-order">Proses Pembayaran Sekarang</button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 KopiKita Roastery. Semua Hak Dilindungi Undang-Undang.</p>
+        <p>Tugas Proyek E-Commerce - IWU</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
