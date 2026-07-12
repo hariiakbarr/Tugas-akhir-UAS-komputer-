@@ -1,4 +1,4 @@
-// 1. DATA PRODUK (Minimal 8-10 Produk sesuai instruksi dosen) produknya:
+oh// 1. DATA PRODUK (Minimal 8-10 Produk sesuai instruksi dosen) produknya:
 const PROD_DATA = [
     { id: 1, name: "Gayo Aceh Arabica", category: "biji-kopi", price: 95000, img: "arabicagayo.jpg", desc: "Biji kopi Arabika Gayo pilihan dengan tingkat keasaman sedang dan aroma rempah yang khas." },
     { id: 2, name: "Toraja Sapan Premium", category: "biji-kopi", price: 110000, img: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&q=80&w=400", desc: "Kopi Toraja dengan cita rasa tebal (full body) dan sentuhan akhir rasa cokelat manis." },
@@ -719,4 +719,177 @@ function renderCustomers() {
             <td><strong>${c.name}</strong></td>
             <td class="wrap-cell">${c.address}</td>
             <td class="mono">${c.totalOrders}</td>
+            /* ==========================================================================
+   STORE-DATA.JS
+   Lapisan data bersama untuk KopiKita Roastery.
+   Dipakai oleh index.html (toko) DAN admin.html (dashboard admin) supaya
+   produk, pesanan, dan pengaturan selalu sinkron lewat localStorage.
+   ========================================================================== */
+
+const STORAGE_KEYS = {
+    PRODUCTS: 'KOPI_PRODUCTS',
+    ORDERS: 'KOPI_ORDERS',
+    SETTINGS: 'KOPI_SETTINGS',
+    ORDER_COUNTER: 'KOPI_ORDER_COUNTER'
+};
+
+// Gambar cadangan jika URL produk rusak/tidak ditemukan
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&q=80&w=400';
+
+// Data awal produk (dipakai hanya sekali saat localStorage masih kosong)
+const DEFAULT_PRODUCTS = [
+    { id: 1, name: "Gayo Aceh Arabica", category: "biji-kopi", price: 95000, stock: 42, img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=400", desc: "Biji kopi Arabika Gayo pilihan dengan tingkat keasaman sedang dan aroma rempah yang khas." },
+    { id: 2, name: "Toraja Sapan Premium", category: "biji-kopi", price: 110000, stock: 28, img: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&q=80&w=400", desc: "Kopi Toraja dengan cita rasa tebal (full body) dan sentuhan akhir rasa cokelat manis." },
+    { id: 3, name: "Kintamani Bali Fruity", category: "biji-kopi", price: 85000, stock: 35, img: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&q=80&w=400", desc: "Cita rasa unik Arabika Bali dengan rasa segar jeruk alami (fruity notes)." },
+    { id: 4, name: "Java Preanger Exotic", category: "biji-kopi", price: 90000, stock: 8, img: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&q=80&w=400", desc: "Kopi klasik tanah Jawa dengan aroma bunga yang memikat dan rasa manis seimbang." },
+    { id: 5, name: "V60 Dripper Kaca 02", category: "alat-seduh", price: 145000, stock: 20, img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=400", desc: "Alat seduh V60 bahan kaca tebal tahan panas untuk ekstraksi kopi yang jernih." },
+    { id: 6, name: "Gooseneck Kettle 600ml", category: "alat-seduh", price: 210000, stock: 15, img: "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?auto=format&fit=crop&q=80&w=400", desc: "Teko leher angsa dengan termometer analog untuk kontrol aliran air yang presisi." },
+    { id: 7, name: "Hand Grinder Stainless", category: "alat-seduh", price: 185000, stock: 6, img: "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?auto=format&fit=crop&q=80&w=400", desc: "Penggiling kopi manual dengan burr keramik, bisa diatur tingkat kehalusannya." },
+    { id: 8, name: "Kertas Filter V60 (100 pcs)", category: "alat-seduh", price: 45000, stock: 60, img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=400", desc: "Paper filter berkualitas tinggi tanpa pemutih, menjaga rasa asli seduhan kopi Anda." }
+];
+
+const DEFAULT_SETTINGS = {
+    storeName: 'KopiKita Roastery',
+    tagline: 'Premium Specialty Coffee',
+    email: 'halo@kopikita.id',
+    phone: '0812-3456-7890',
+    address: 'Jl. Kopi Nikmat No. 1, Bandung, Jawa Barat',
+    lowStockThreshold: 10
+};
+
+// ---------- PRODUK ----------
+function loadProducts() {
+    const raw = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    if (!raw) {
+        saveProducts(DEFAULT_PRODUCTS);
+        return JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+    }
+    try { return JSON.parse(raw); } catch (e) { return JSON.parse(JSON.stringify(DEFAULT_PRODUCTS)); }
+}
+
+function saveProducts(products) {
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+}
+
+function nextProductId(products) {
+    return products.reduce((max, p) => Math.max(max, p.id), 0) + 1;
+}
+
+// ---------- PESANAN ----------
+function loadOrders() {
+    const raw = localStorage.getItem(STORAGE_KEYS.ORDERS);
+    if (!raw) {
+        const seeded = generateSeedOrders();
+        saveOrders(seeded);
+        localStorage.setItem(STORAGE_KEYS.ORDER_COUNTER, '1012');
+        return seeded;
+    }
+    try { return JSON.parse(raw); } catch (e) { return []; }
+}
+
+function saveOrders(orders) {
+    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+}
+
+function nextOrderId() {
+    let counter = parseInt(localStorage.getItem(STORAGE_KEYS.ORDER_COUNTER) || '1012', 10);
+    counter += 1;
+    localStorage.setItem(STORAGE_KEYS.ORDER_COUNTER, String(counter));
+    return 'KK-' + counter;
+}
+
+// Data pesanan contoh, supaya dashboard admin langsung terisi grafik & tabel
+// yang realistis sebelum ada transaksi asli dari toko.
+function generateSeedOrders() {
+    return [
+        { id: 'KK-1001', customerName: 'Dian Puspitasari', customerAddress: 'Jl. Merdeka No. 12, Bandung', paymentMethod: 'bca', date: '2026-02-14T10:30:00', status: 'Selesai',
+          items: [ { productId: 1, name: 'Gayo Aceh Arabica', price: 95000, quantity: 2 }, { productId: 5, name: 'V60 Dripper Kaca 02', price: 145000, quantity: 1 } ], total: 335000 },
+        { id: 'KK-1002', customerName: 'Rizky Ramadhan', customerAddress: 'Jl. Diponegoro No. 45, Semarang', paymentMethod: 'gopay', date: '2026-02-27T14:05:00', status: 'Selesai',
+          items: [ { productId: 2, name: 'Toraja Sapan Premium', price: 110000, quantity: 1 } ], total: 110000 },
+        { id: 'KK-1003', customerName: 'Siti Nur Aini', customerAddress: 'Jl. Malioboro No. 8, Yogyakarta', paymentMethod: 'ovo', date: '2026-03-10T09:15:00', status: 'Selesai',
+          items: [ { productId: 3, name: 'Kintamani Bali Fruity', price: 85000, quantity: 3 } ], total: 255000 },
+        { id: 'KK-1004', customerName: 'Bagus Setiawan', customerAddress: 'Jl. Sudirman No. 21, Surabaya', paymentMethod: 'bca', date: '2026-03-22T16:40:00', status: 'Selesai',
+          items: [ { productId: 6, name: 'Gooseneck Kettle 600ml', price: 210000, quantity: 1 }, { productId: 8, name: 'Kertas Filter V60 (100 pcs)', price: 45000, quantity: 2 } ], total: 300000 },
+        { id: 'KK-1005', customerName: 'Made Wirawan', customerAddress: 'Jl. Gatot Subroto No. 3, Denpasar', paymentMethod: 'gopay', date: '2026-04-05T11:20:00', status: 'Selesai',
+          items: [ { productId: 4, name: 'Java Preanger Exotic', price: 90000, quantity: 2 } ], total: 180000 },
+        { id: 'KK-1006', customerName: 'Anita Lestari', customerAddress: 'Jl. Ahmad Yani No. 17, Medan', paymentMethod: 'ovo', date: '2026-04-19T13:50:00', status: 'Selesai',
+          items: [ { productId: 7, name: 'Hand Grinder Stainless', price: 185000, quantity: 1 }, { productId: 8, name: 'Kertas Filter V60 (100 pcs)', price: 45000, quantity: 1 } ], total: 230000 },
+        { id: 'KK-1007', customerName: 'Fajar Nugroho', customerAddress: 'Jl. Veteran No. 9, Malang', paymentMethod: 'bca', date: '2026-05-08T10:00:00', status: 'Dikirim',
+          items: [ { productId: 1, name: 'Gayo Aceh Arabica', price: 95000, quantity: 1 }, { productId: 2, name: 'Toraja Sapan Premium', price: 110000, quantity: 1 } ], total: 205000 },
+        { id: 'KK-1008', customerName: 'Putri Ayu Ningsih', customerAddress: 'Jl. Cihampelas No. 55, Bandung', paymentMethod: 'gopay', date: '2026-05-25T15:30:00', status: 'Dikirim',
+          items: [ { productId: 5, name: 'V60 Dripper Kaca 02', price: 145000, quantity: 2 } ], total: 290000 },
+        { id: 'KK-1009', customerName: 'Yoga Pratama', customerAddress: 'Jl. Pandanaran No. 30, Semarang', paymentMethod: 'ovo', date: '2026-06-12T09:45:00', status: 'Diproses',
+          items: [ { productId: 3, name: 'Kintamani Bali Fruity', price: 85000, quantity: 2 }, { productId: 6, name: 'Gooseneck Kettle 600ml', price: 210000, quantity: 1 } ], total: 380000 },
+        { id: 'KK-1010', customerName: 'Melani Kusuma', customerAddress: 'Jl. Kaliurang No. 14, Yogyakarta', paymentMethod: 'bca', date: '2026-06-30T17:10:00', status: 'Diproses',
+          items: [ { productId: 4, name: 'Java Preanger Exotic', price: 90000, quantity: 1 }, { productId: 8, name: 'Kertas Filter V60 (100 pcs)', price: 45000, quantity: 3 } ], total: 225000 },
+        { id: 'KK-1011', customerName: 'Doni Firmansyah', customerAddress: 'Jl. Panglima Sudirman No. 6, Surabaya', paymentMethod: 'gopay', date: '2026-07-03T12:25:00', status: 'Pending',
+          items: [ { productId: 1, name: 'Gayo Aceh Arabica', price: 95000, quantity: 3 } ], total: 285000 },
+        { id: 'KK-1012', customerName: 'Ratna Sari', customerAddress: 'Jl. Riau No. 22, Bandung', paymentMethod: 'ovo', date: '2026-07-08T18:05:00', status: 'Pending',
+          items: [ { productId: 7, name: 'Hand Grinder Stainless', price: 185000, quantity: 1 }, { productId: 5, name: 'V60 Dripper Kaca 02', price: 145000, quantity: 1 } ], total: 330000 }
+    ];
+}
+
+// ---------- PENGATURAN TOKO ----------
+function loadSettings() {
+    const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    if (!raw) {
+        saveSettings(DEFAULT_SETTINGS);
+        return { ...DEFAULT_SETTINGS };
+    }
+    try { return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) }; } catch (e) { return { ...DEFAULT_SETTINGS }; }
+}
+
+function saveSettings(settings) {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+}
+
+// ---------- HELPER ----------
+function formatRupiah(angka) {
+    return 'Rp ' + Math.round(angka).toLocaleString('id-ID');
+}
+
+function formatTanggal(isoString) {
+    const d = new Date(isoString);
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// Menurunkan daftar pelanggan unik dari riwayat pesanan (nama + alamat sebagai kunci)
+function getCustomersFromOrders(orders) {
+    const map = {};
+    orders.forEach(o => {
+        const key = (o.customerName || '').trim().toLowerCase() + '|' + (o.customerAddress || '').trim().toLowerCase();
+        if (!map[key]) {
+            map[key] = {
+                name: o.customerName,
+                address: o.customerAddress,
+                totalOrders: 0,
+                totalSpent: 0,
+                firstOrderDate: o.date
+            };
+        }
+        map[key].totalOrders += 1;
+        map[key].totalSpent += o.total;
+        if (new Date(o.date) < new Date(map[key].firstOrderDate)) {
+            map[key].firstOrderDate = o.date;
+        }
+    });
+    return Object.values(map).sort((a, b) => new Date(b.firstOrderDate) - new Date(a.firstOrderDate));
+}
+
+// Agregasi total penjualan per bulan untuk N bulan terakhir (dihitung dari hari ini)
+function getMonthlySales(orders, monthsBack) {
+    const now = new Date();
+    const buckets = [];
+    for (let i = monthsBack - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        buckets.push({ year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleDateString('id-ID', { month: 'short' }), total: 0 });
+    }
+    orders.forEach(o => {
+        const d = new Date(o.date);
+        const bucket = buckets.find(b => b.year === d.getFullYear() && b.month === d.getMonth());
+        if (bucket) bucket.total += o.total;
+    });
+    return buckets;
+                                          }
+                                          
        
